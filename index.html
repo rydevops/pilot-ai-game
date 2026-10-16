@@ -303,7 +303,7 @@
       <div class="chips" id="hChips"></div>
     </section>
     <section class="hud" id="hudGob" data-level="hi" aria-label="Fire Goblin health and mana">
-      <h2>FIRE GOBLIN</h2>
+      <h2 id="gobName">FIRE GOBLIN</h2>
       <div class="bar" id="gBar" role="progressbar" aria-label="Fire Goblin HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i class="trail" id="gTrail"></i><i class="fill" id="gFill" data-level="hi"></i></div>
       <p class="hp"><span>HP</span><span><b id="gHp">100</b> / <span id="gMax">100</span></span></p>
       <div class="bar mpbar" id="gMpBar" role="progressbar" aria-label="Fire Goblin MP" aria-valuemin="0" aria-valuemax="60" aria-valuenow="60"><i class="trail" id="gMpTrail"></i><i class="fill mpfill" id="gMpFill"></i></div>
@@ -324,7 +324,7 @@
       <button id="again" type="button" hidden>Fight again</button>
     </div>
     <div class="row" id="ctl">
-      <p class="score" id="score">Hero 0 - 0 Goblin</p>
+      <p class="score" id="score">Won 0 / Lost 0</p>
       <div class="btns">
         <button id="snd" type="button" aria-label="Sound effects on or off"><span class="lb">SFX</span><span id="sndV">: ON</span></button>
         <button id="mode" type="button" aria-label="Switch between playing yourself and watching an auto battle"><span class="lb">MODE: </span><span id="modeV">YOU</span></button>
@@ -361,6 +361,10 @@
       { id: 'fireball', name: 'Fireball', shout: 'FIREBALL!', chip: 'F', cost: 8, min: 14, max: 22, rgb: [255, 130, 40], bub: '#ffb347', settle: 650 },
       { id: 'wave', name: 'Flame Wave', shout: 'FLAME WAVE!', chip: 'W', cost: 14, min: 18, max: 26, rgb: [255, 95, 35], bub: '#ff9b5e', settle: 800 },
       { id: 'meteor', name: 'Meteor', shout: 'METEOR!', chip: 'M', cost: 24, min: 28, max: 38, rgb: [255, 70, 30], bub: '#ff7a5c', settle: 1100 }
+    ],
+    teacher: [
+      { id: 'quiz', name: 'Pop Quiz', shout: 'POP QUIZ!', chip: 'P', cost: 10, min: 14, max: 22, rgb: [255, 236, 150], bub: '#fff3b0', settle: 950 },
+      { id: 'detention', name: 'Detention', shout: 'DETENTION!', chip: 'D', cost: 20, min: 8, max: 14, rgb: [180, 130, 255], bub: '#d9c2ff', settle: 1000, status: 'detain' }
     ]
   };
   // what the target looks like when a spell lands
@@ -370,7 +374,9 @@
     wave:     { tint: 'burn',  ms: 1000, flash: 'rgba(255,200,130,0.85)' },
     meteor:   { tint: 'blast', ms: 1000, flash: 'rgba(255,235,190,0.9)' },
     ice:      { tint: 'ice',   ms: 560, flash: 'rgba(205,246,255,0.85)' },
-    bolt:     { tint: 'shock', ms: 420, flash: 'rgba(255,255,225,0.9)' }
+    bolt:     { tint: 'shock', ms: 420, flash: 'rgba(255,255,225,0.9)' },
+    quiz:     { tint: 'ink',   ms: 800, flash: 'rgba(255,255,255,0.85)' },
+    detention: { tint: 'detain', ms: 1e9, flash: 'rgba(220,200,255,0.85)' }
   };
 
   // ====================================================================
@@ -454,6 +460,17 @@
       N({ at: at, d: 0.9 * s, f: [500, 70], type: 'lowpass', v: 0.7, brown: true, a: 0.01 });
       pops(at + 0.05, 0.6 * s, Math.round(9 * s), 1500, 4500, 0.28);
     }
+    // a struck school bell: fundamental plus inharmonic partials
+    function bell(at, f, v) {
+      T({ at: at, f: f, d: 0.9, v: v, type: 'sine', a: 0.002 });
+      T({ at: at, f: f * 2.76, d: 0.55, v: v * 0.5, type: 'sine', a: 0.002 });
+      T({ at: at, f: f * 5.4, d: 0.3, v: v * 0.28, type: 'sine', a: 0.002 });
+      N({ at: at, d: 0.04, f: f * 3, q: 2, v: v * 0.6, a: 0.001 });
+    }
+    // an electric school-bell buzz
+    function buzz(at, n, f, v) {
+      for (let i = 0; i < n; i++) T({ at: at + i * 0.035, f: f, d: 0.028, v: v, type: 'square', a: 0.002 });
+    }
     function whoosh(at, d, lo, hi, v) { N({ at: at, d: d, f: [lo, hi], q: 1.1, v: v, a: d * 0.35 }); }
 
     const API = {
@@ -489,9 +506,36 @@
         T({ at: 0.12, f: 2349, d: 0.6, v: 0.16, type: 'triangle' });
         N({ d: 0.12, f: [6000, 9000], type: 'highpass', v: 0.25 });
       },
-      grunt: function (hero) {
-        if (hero) T({ at: 0.03, f: [360, 170], d: 0.14, v: 0.7, type: 'square' });
-        else T({ at: 0.03, f: [190, 70], d: 0.2, v: 0.85, type: 'sawtooth' });
+      grunt: function (who) {
+        if (who === true || who === 'hero') {
+          T({ at: 0.03, f: [360, 170], d: 0.14, v: 0.7, type: 'square' });
+        } else if (who === 'teacher') {                                   // an indignant "hmph!"
+          T({ at: 0.03, f: [270, 150], d: 0.22, v: 0.6, type: 'sawtooth' });
+          T({ at: 0.03, f: [135, 95], d: 0.22, v: 0.5, type: 'square' });
+          N({ at: 0.03, d: 0.16, f: [1000, 400], q: 2, v: 0.25 });
+        } else {
+          T({ at: 0.03, f: [190, 70], d: 0.2, v: 0.85, type: 'sawtooth' });
+        }
+      },
+      // wooden ruler: a sharp crack, a knock and a springy twang
+      ruler: function () {
+        N({ d: 0.05, f: [2500, 4800], q: 0.8, v: 2.0, a: 0.001 });
+        T({ f: [520, 190], d: 0.1, v: 2.0, type: 'triangle', a: 0.002 });
+        N({ d: 0.1, f: [1800, 300], type: 'lowpass', v: 1.2 });
+        T({ at: 0.01, f: [690, 640], d: 0.55, v: 0.4, type: 'triangle', a: 0.002 });
+        T({ at: 0.01, f: [697, 646], d: 0.55, v: 0.35, type: 'triangle', a: 0.002 });
+        T({ at: 0.01, f: [1380, 1290], d: 0.3, v: 0.12, type: 'sine', a: 0.002 });
+      },
+      // played when a mob walks on
+      intro: function (voice) {
+        if (voice === 'teacher') { buzz(0, 9, 2300, 0.18); bell(0.34, 1175, 0.22); }
+        else { T({ f: [95, 55], d: 0.5, v: 0.55, type: 'sawtooth', a: 0.03 }); N({ d: 0.5, f: [500, 120], type: 'lowpass', v: 0.5, brown: true }); pops(0.1, 0.4, 6, 2500, 5500, 0.2); }
+      },
+      // the cage lifting once the turn is served
+      detentionEnd: function () {
+        T({ f: [440, 880], d: 0.3, v: 0.22, type: 'triangle' });
+        bell(0.1, 1568, 0.14);
+        pops(0, 0.3, 8, 3500, 8000, 0.2);
       },
       ko: function () {
         T({ at: 0.15, f: [420, 55], d: 0.8, v: 0.3, type: 'square', a: 0.01 });
@@ -508,7 +552,16 @@
 
       // ---- the wind-up while a caster raises their weapon (about 0.55s) ----
       charge: function (id) {
-        if (id === 'ice') {
+        if (id === 'quiz') {
+          [392, 494, 659].forEach(function (f, i) { T({ at: i * 0.12, f: f, d: 0.1, v: 0.18, type: 'square' }); });
+          T({ at: 0.36, f: [500, 940], d: 0.2, v: 0.18, type: 'square' });                // the questioning rise
+          for (let i = 0; i < 12; i++) N({ at: i * 0.04, d: 0.03, f: rr(3000, 5500), q: 3, v: 0.2 });   // pencil scratching
+          T({ f: [90, 160], d: 0.56, v: 0.25, type: 'sine', swell: true });
+        } else if (id === 'detention') {
+          for (let i = 0; i < 8; i++) T({ at: i * 0.07, f: i % 2 ? 1500 : 1900, d: 0.025, v: 0.24, type: 'square' });   // tick, tock
+          T({ f: [55, 100], d: 0.56, v: 0.35, type: 'sine', swell: true });
+          bell(0.35, 196, 0.25);
+        } else if (id === 'ice') {
           [1568, 1976, 2349, 2637, 3136, 3951].forEach(function (f, i) { T({ at: i * 0.085, f: f, d: 0.4, v: 0.16, type: 'sine' }); T({ at: i * 0.085, f: f * 2.01, d: 0.25, v: 0.05, type: 'sine' }); });
           N({ d: 0.56, f: [5000, 9000], type: 'highpass', v: 0.14, swell: true });
           T({ f: [400, 900], d: 0.56, v: 0.08, type: 'triangle', swell: true });
@@ -531,7 +584,31 @@
 
       // ---- the spell itself, timed to its animation ----
       release: function (id) {
-        if (id === 'fire' || id === 'fireball') {
+        if (id === 'quiz') {
+          // nine papers fluttering out, slapping home, then the red pen and the wrong-answer buzzer
+          for (let i = 0; i < 9; i++) {
+            N({ at: i * 0.055, d: 0.08, f: [2500, 6000], q: 1.2, v: 0.3, a: 0.01 });
+            const h = i * 0.055 + 0.34;
+            N({ at: h, d: 0.05, f: [1500, 3500], q: 1, v: 0.35, a: 0.002 });
+            T({ at: h, f: [300, 150], d: 0.06, v: 0.2, type: 'sine' });
+          }
+          N({ at: 0.78, d: 0.12, f: [3000, 7000], q: 0.7, v: 0.55, a: 0.005 });
+          N({ at: 0.9, d: 0.12, f: [7000, 3000], q: 0.7, v: 0.5, a: 0.005 });
+          T({ at: 0.8, f: 150, d: 0.45, v: 0.38, type: 'sawtooth', a: 0.01 });
+          T({ at: 0.8, f: 158, d: 0.45, v: 0.3, type: 'square', a: 0.01 });
+        } else if (id === 'detention') {
+          // bell rings while the clock spins, bars crash down at 0.45s, the lock clicks at 0.62s
+          bell(0, 880, 0.22);
+          buzz(0.05, 12, 2300, 0.17);
+          T({ at: 0.45, f: [900, 700], d: 0.55, v: 0.42, type: 'square', a: 0.002 });
+          T({ at: 0.45, f: 1370, d: 0.6, v: 0.2, type: 'sine', a: 0.002 });
+          T({ at: 0.45, f: 2310, d: 0.4, v: 0.12, type: 'sine', a: 0.002 });
+          N({ at: 0.45, d: 0.1, f: [6000, 1200], q: 0.5, v: 0.8, a: 0.001 });
+          for (let i = 0; i < 7; i++) T({ at: 0.45 + i * 0.018, f: [200, 90], d: 0.09, v: 0.4, type: 'sine', a: 0.002 });
+          T({ at: 0.45, f: [110, 70], d: 0.9, v: 0.26, type: 'sawtooth', a: 0.03 });
+          T({ at: 0.62, f: 320, d: 0.05, v: 0.3, type: 'square' });
+          T({ at: 0.66, f: 640, d: 0.06, v: 0.25, type: 'square' });
+        } else if (id === 'fire' || id === 'fireball') {
           const lo = id === 'fireball' ? 0.8 : 1;
           whoosh(0, 0.3, 350 * lo, 2200 * lo, 0.55);
           T({ f: [520 * lo, 180 * lo], d: 0.32, v: 0.14, type: 'sawtooth' });
@@ -593,8 +670,10 @@
   //  Fighters
   // ====================================================================
   const heroImg = new Image(), gobImg = new Image();
+  const teachImg = new Image();
   heroImg.src = 'hero.png';
   gobImg.src = 'goblin.png';
+  teachImg.src = 'teacher.png';
 
   function actor(o) {
     return Object.assign({
@@ -617,9 +696,8 @@
     spells: SPELLS.gob, hud: hudOf('g')
   });
   const actors = [hero, gob];
-  actors.forEach(function (a) {
-    a.hud.max.textContent = MAX_HP;
-    a.hud.mpMax.textContent = MAX_MP;
+  function buildChips(a) {
+    a.hud.chips.innerHTML = '';
     a.chips = a.spells.map(function (sp) {
       const el = document.createElement('span');
       el.className = 'chip';
@@ -630,7 +708,36 @@
       a.hud.chips.appendChild(el);
       return { el: el, cost: sp.cost, id: sp.id };
     });
+  }
+  actors.forEach(function (a) {
+    a.hud.max.textContent = MAX_HP;
+    a.hud.mpMax.textContent = MAX_MP;
+    buildChips(a);
   });
+
+  // The opponent slot is filled by a different mob each battle.
+  const MOBS = [
+    { key: 'goblin', name: 'Fire Goblin', title: 'FIRE GOBLIN', img: gobImg, spells: SPELLS.gob, voice: 'goblin', melee: 'club',
+      intro: 'A Fire Goblin leaps out of the trees!', alt: 'a hero and a fire goblin' },
+    { key: 'teacher', name: 'Mr. Marks', title: 'MR. MARKS', img: teachImg, spells: SPELLS.teacher, voice: 'teacher', melee: 'ruler',
+      intro: 'Mr. Marks strides in. "Class is in session!"', alt: 'a hero and Mr. Marks the strict teacher' }
+  ];
+  let forcedMob = null;
+  function applyMob(m) {
+    gob.name = m.name; gob.img = m.img; gob.spells = m.spells; gob.voice = m.voice; gob.melee = m.melee; gob.mobKey = m.key;
+    $('gobName').textContent = m.title;
+    gob.hud.panel.setAttribute('aria-label', m.name + ' health and mana');
+    gob.hud.bar.setAttribute('aria-label', m.name + ' HP');
+    gob.hud.mpBar.setAttribute('aria-label', m.name + ' MP');
+    cv.setAttribute('aria-label', 'Pixel art of ' + m.alt + ' casting spells in a forest clearing');
+    buildChips(gob);
+  }
+  function pickMob() {
+    const ok = MOBS.filter(function (m) { return m.img.complete && m.img.naturalWidth > 0; });
+    const pool = ok.length ? ok : [MOBS[0]];
+    if (forcedMob) { const f = pool.filter(function (m) { return m.key === forcedMob; })[0]; if (f) return f; }
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
 
   // ---------- player controls ----------
   // 'play': the hero waits for a tap on the command bar. 'auto': the hero picks at random like the goblin.
@@ -720,6 +827,8 @@
     if (t.mode === 'burn') return 'rgba(255,' + Math.round(120 + 50 * Math.sin(now / 70)) + ',30,' + (0.3 + 0.12 * Math.sin(now / 55)).toFixed(2) + ')';
     if (t.mode === 'ice') return 'rgba(130,222,255,0.55)';
     if (t.mode === 'shock') return (reduce || Math.floor(now / 140) % 2 === 0) ? 'rgba(255,255,200,0.6)' : null;
+    if (t.mode === 'ink') return 'rgba(70,80,210,' + (0.45 * (t.until - now) / t.ms).toFixed(2) + ')';
+    if (t.mode === 'detain') return 'rgba(125,110,185,0.5)';
     if (t.mode === 'blast') return 'rgba(255,150,50,' + (0.55 * (t.until - now) / t.ms).toFixed(2) + ')';
     return null;
   }
@@ -780,6 +889,23 @@
     el.style.left = Math.max(w / 2 + 2, Math.min(aw - w / 2 - 2, cx)) + 'px';
     el.style.top = 9 * unit + 'px';
     a.bubble = el;
+  }
+  // a small status tag over a fighter's head (used for detention)
+  function showBadge(a, text, color) {
+    hideBadge(a);
+    const el = document.createElement('div');
+    el.className = 'bubble';
+    el.textContent = text;
+    el.style.setProperty('--bub', color);
+    arena.appendChild(el);
+    const unit = dev / dpr, aw = cv.width / dpr, w = el.offsetWidth || 110;
+    const cx = a.side === 1 ? 16 * unit : aw - 16 * unit;
+    el.style.left = Math.max(w / 2 + 2, Math.min(aw - w / 2 - 2, cx)) + 'px';
+    el.style.top = 9 * unit + 'px';
+    a.badge = el;
+  }
+  function hideBadge(a) {
+    if (a.badge) { a.badge.remove(); a.badge = null; }
   }
   function hideBubble(a) {
     if (a.bubble) { a.bubble.remove(); a.bubble = null; }
@@ -1248,7 +1374,7 @@
     }
     fxDirty = true;
   }
-  function addObj(life, fn) { objs.push({ age: 0, life: life, fn: fn, fired: false }); fxDirty = true; }
+  function addObj(life, fn) { const o = { age: 0, life: life, fn: fn, fired: false }; objs.push(o); fxDirty = true; return o; }
 
   function glow(x, y, r, rgb, a) {
     if (a <= 0.004 || r < 1) return;
@@ -1304,6 +1430,7 @@
   function charge(a, sp) {
     const rgb = sp.rgb.join(','), hp = P(a, HAND[0], HAND[1]), feet = P(a, FEET[0], FEET[1]);
     circle(feet.x, feet.y, rgb, 1.0);
+    if (sp.id === 'quiz') qMarks(a);
     addObj(0.58, function (dt, age, k, o) {
       const n = 3;
       for (let i = 0; i < n; i++) {
@@ -1566,10 +1693,156 @@
     });
   }
 
+  // ---- pop quiz: a flurry of graded test papers, then a big red X and an F ----
+  function drawPaper(x, y, rot, s) {
+    fg.save(); fg.translate(x, y); fg.rotate(rot);
+    const w = 3.6 * dev * s, h = 4.6 * dev * s;
+    fg.fillStyle = '#241a38'; fg.fillRect(-w / 2 - fxPx, -h / 2 - fxPx, w + fxPx * 2, h + fxPx * 2);
+    fg.fillStyle = '#fffdf2'; fg.fillRect(-w / 2, -h / 2, w, h);
+    fg.fillStyle = '#8fb4e8';
+    for (let i = 0; i < 3; i++) fg.fillRect(-w / 2 + fxPx, -h / 2 + h * (0.38 + i * 0.2), w - fxPx * 2, Math.max(1, fxPx * 0.6));
+    fg.fillStyle = '#e0302c'; fg.fillRect(w / 2 - fxPx * 3, -h / 2 + fxPx, fxPx * 2, fxPx * 2);
+    fg.restore();
+  }
+  // question marks that swirl up around the teacher's hand while he winds up
+  function qMarks(a) {
+    const hp = P(a, HAND[0], HAND[1]);
+    addObj(0.9, function (dt, age, k) {
+      fg.font = Math.round(5 * dev) + 'px "Press Start 2P", monospace'; fg.textAlign = 'center';
+      for (let i = 0; i < 3; i++) {
+        const an = age * 5 + i * TAU / 3, rr2 = (6 + 3 * Math.sin(age * 4 + i)) * dev;
+        const x = hp.x + Math.cos(an) * rr2, y = hp.y - 3 * dev + Math.sin(an) * rr2 * 0.5 - age * 5 * dev;
+        fg.globalAlpha = Math.min(1, age / 0.15) * (1 - k);
+        fg.fillStyle = '#3b2a00'; fg.fillText('?', x + fxPx, y + fxPx);
+        fg.fillStyle = '#ffe36a'; fg.fillText('?', x, y);
+      }
+      fg.globalAlpha = 1; fg.textAlign = 'start';
+    });
+  }
+  function popQuiz(a, d, sp) {
+    return new Promise(function (res) {
+      const from = P(a, MUZZLE[0], MUZZLE[1]), to = P(d, CHEST[0], CHEST[1]);
+      const N = 9, T = 0.34, GAP = 0.055;
+      for (let i = 0; i < N; i++) {
+        const delay = i * GAP, lift = rnd(3, 9) * dev, spin = rnd(8, 15) * (i % 2 ? 1 : -1), off = rnd(-6, 6) * dev, sc = rnd(0.9, 1.25);
+        addObj(delay + T, function (dt, age, k, o) {
+          const t = age - delay;
+          if (t < 0) return;
+          const kk = Math.min(1, t / T);
+          const x = lerp(from.x, to.x, kk), y = lerp(from.y, to.y + off * 0.5, kk) - lift * 4 * kk * (1 - kk);
+          drawPaper(x, y, spin * kk + 0.3, sc);
+          if (Math.random() < 0.5) emit(x, y, { n: 1, sp: [2, 10], ang: [0, TAU], life: [0.2, 0.4], s: [1, 1], c0: [255, 255, 255], c1: [200, 220, 255], g: 20 });
+          if (kk >= 1 && !o.fired) {
+            o.fired = true;
+            emit(to.x + off * 0.4, to.y + off * 0.3, { n: 8, sp: [20, 70], ang: [0, TAU], life: [0.3, 0.6], s: [1, 2], c0: [255, 255, 255], c1: [255, 70, 70], g: 80 });
+            addShake(1.5);
+          }
+        });
+      }
+      const lastEnd = (N - 1) * GAP + T;
+      addObj(lastEnd + 1.0, function (dt, age, k, o) {
+        const t = age - lastEnd;
+        if (t < 0) return;
+        if (!o.fired) {
+          o.fired = true; addFlash('255,245,225', 0.28); addShake(7);
+          emit(to.x, to.y, { n: 36, sp: [30, 110], ang: [0, TAU], life: [0.4, 0.9], s: [1, 2.2], c0: [235, 40, 40], c1: [110, 10, 25], g: 150, d: 1 });
+          res();
+        }
+        const fade = t < 0.7 ? 1 : Math.max(0, 1 - (t - 0.7) / 0.3);
+        const r = 7.5 * dev, p1 = Math.min(1, t / 0.12), p2 = Math.min(1, Math.max(0, (t - 0.1) / 0.12));
+        fg.lineCap = 'round'; fg.globalAlpha = fade;
+        [['#3b0a14', fxPx * 4.6], ['#e8332e', fxPx * 3]].forEach(function (st) {
+          fg.strokeStyle = st[0]; fg.lineWidth = st[1];
+          fg.beginPath(); fg.moveTo(to.x - r, to.y - r); fg.lineTo(to.x - r + 2 * r * p1, to.y - r + 2 * r * p1); fg.stroke();
+          if (p2 > 0) { fg.beginPath(); fg.moveTo(to.x + r, to.y - r); fg.lineTo(to.x + r - 2 * r * p2, to.y - r + 2 * r * p2); fg.stroke(); }
+        });
+        if (t > 0.2) {
+          fg.font = Math.round(6 * dev) + 'px "Press Start 2P", monospace'; fg.textAlign = 'center';
+          fg.fillStyle = '#3b0a14'; fg.fillText('F', to.x + 1.5 * dev + fxPx, to.y - r - 2 * dev + fxPx);
+          fg.fillStyle = '#ff4a44'; fg.fillText('F', to.x + 1.5 * dev, to.y - r - 2 * dev);
+          fg.textAlign = 'start';
+        }
+        fg.globalAlpha = 1;
+      });
+    });
+  }
+
+  // ---- detention: a clock tolls overhead, then ruler-barred bars slam down and stay until the turn is served ----
+  function clockFace(x, y, r, t, alpha) {
+    fg.globalAlpha = alpha;
+    pdisc(x, y, r + fxPx * 1.5, '#241a38');
+    pdisc(x, y, r, '#cdb8ff');
+    pdisc(x, y, r - fxPx * 2, '#ffffff');
+    fg.fillStyle = '#6a4fb8';
+    for (let i = 0; i < 12; i++) {
+      const an = i * TAU / 12 - Math.PI / 2;
+      fg.fillRect(snap(x + Math.cos(an) * (r - fxPx * 3.4)), snap(y + Math.sin(an) * (r - fxPx * 3.4)), fxPx, fxPx);
+    }
+    fg.strokeStyle = '#241a38'; fg.lineCap = 'round';
+    const mA = t * 16 - Math.PI / 2, hA = t * 16 / 12 - Math.PI / 2;
+    fg.lineWidth = fxPx * 1.4; fg.beginPath(); fg.moveTo(x, y); fg.lineTo(x + Math.cos(mA) * (r - fxPx * 3), y + Math.sin(mA) * (r - fxPx * 3)); fg.stroke();
+    fg.lineWidth = fxPx * 1.8; fg.beginPath(); fg.moveTo(x, y); fg.lineTo(x + Math.cos(hA) * r * 0.5, y + Math.sin(hA) * r * 0.5); fg.stroke();
+    fg.globalAlpha = 1;
+  }
+  function cageOff(a) {
+    if (a.cageObj) { a.cageObj.liftAt = a.cageObj.age; a.cageObj = null; }
+  }
+  function detention(a, d, sp) {
+    return new Promise(function (res) {
+      const p0 = P(d, 8, 9), p1 = P(d, 24, 29.2);
+      const x0 = Math.min(p0.x, p1.x), x1 = Math.max(p0.x, p1.x), y0 = p0.y, y1 = p1.y, w = x1 - x0, cx = (x0 + x1) / 2;
+      const head = P(d, 16, 3);
+      const WARN = 0.45, BARS = 6, BW = Math.max(fxPx * 2, 0.95 * dev);
+      const topY = P(d, 8, 11).y - 0.5 * dev, botY = y1 + 0.8 * dev;      // starts just under the DETENTION tag
+      dimRgb = '18,4,40'; dimTarget = 0.34 * CALM;
+      d.cageObj = addObj(1e4, function (dt, age, k, o) {
+        const lift = o.liftAt === undefined ? -1 : age - o.liftAt;
+        if (lift > 0.5) { o.life = age; return; }
+        const keep = lift < 0 ? 1 : 1 - lift / 0.5;
+        if (age < WARN) {
+          const g = Math.min(1, age / 0.15);
+          clockFace(head.x, head.y, 6.5 * dev * (0.7 + 0.3 * g), age, g);
+          addMode(); glow(head.x, head.y, 13 * dev, '170,120,255', 0.3 * g); normMode();
+          if (Math.random() < 0.6) emit(head.x + rnd(-6, 6) * dev, head.y + 4 * dev, { n: 1, sp: [4, 14], ang: [Math.PI / 2 - 0.5, Math.PI / 2 + 0.5], life: [0.4, 0.8], s: [1, 1.6], c0: [220, 200, 255], c1: [120, 80, 220] });
+          return;
+        }
+        const t = age - WARN;
+        if (!o.fired) { o.fired = true; dimTarget = 0; addFlash('215,185,255', 0.3); addShake(6); }
+        if (t < 0.25) clockFace(head.x, head.y, 6.5 * dev, age, 1 - t / 0.25);
+        const liftDy = lift > 0 ? -(lift / 0.5) * 8 * dev : 0;
+        fg.globalAlpha = keep;
+        for (let i = 0; i < BARS; i++) {
+          const bx = lerp(x0 + w * 0.06, x1 - w * 0.06, i / (BARS - 1));
+          const p = Math.min(1, Math.max(0, (t - i * 0.018) / 0.12)), e = 1 - Math.pow(1 - p, 3), h = (botY - topY) * e;
+          if (h <= 0) continue;
+          const xx = snap(bx - BW / 2), yy = snap(topY + liftDy);
+          fg.fillStyle = '#241a38'; fg.fillRect(xx - fxPx, yy - fxPx, BW + fxPx * 2, h + fxPx * 2);
+          fg.fillStyle = '#e8dcff'; fg.fillRect(xx, yy, BW, h);
+          fg.fillStyle = '#a98be8'; fg.fillRect(xx + BW - fxPx * 1.2, yy, fxPx * 1.2, h);
+          fg.fillStyle = '#6a4fb8';
+          for (let ty = yy + dev * 2; ty < yy + h - dev; ty += dev * 2.2) fg.fillRect(xx, snap(ty), fxPx * 1.3, Math.max(1, fxPx * 0.6));
+          if (p >= 1 && !o['l' + i]) { o['l' + i] = 1; emit(bx, botY, { n: 4, sp: [10, 40], ang: [-Math.PI * 0.9, -Math.PI * 0.1], life: [0.2, 0.45], s: [1, 1.6], c0: [255, 255, 255], c1: [170, 120, 255], g: 90 }); }
+        }
+        const rail = Math.max(fxPx * 2, 1.4 * dev);
+        fg.globalAlpha = keep * Math.min(1, t / 0.1);
+        [topY + liftDy, botY - rail * 0.3].forEach(function (ry) {
+          fg.fillStyle = '#241a38'; fg.fillRect(snap(x0 + w * 0.06 - BW / 2 - fxPx), snap(ry - fxPx), (x1 - x0) * 0.88 + BW + fxPx * 2, rail + fxPx * 2);
+          fg.fillStyle = '#cdb8ff'; fg.fillRect(snap(x0 + w * 0.06 - BW / 2), snap(ry), (x1 - x0) * 0.88 + BW, rail);
+        });
+        fg.globalAlpha = 1;
+        addMode(); glow(cx, (y0 + y1) / 2, w * 0.9, '150,100,255', (0.17 + 0.07 * Math.sin(age * 5)) * keep); normMode();
+        if (lift < 0 && Math.random() < 0.1) emit(cx + rnd(-w / 2, w / 2), rnd(y0, y1), { n: 1, sp: [2, 8], ang: [-Math.PI, 0], life: [0.4, 0.8], s: [1, 1.4], c0: [235, 220, 255], c1: [150, 100, 255], g: -6 });
+        if (lift > 0 && Math.random() < 0.5) emit(cx + rnd(-w / 2, w / 2), rnd(y0, y1), { n: 1, sp: [10, 40], ang: [-Math.PI, 0], life: [0.3, 0.6], s: [1, 1.6], c0: [255, 255, 255], c1: [170, 120, 255], g: 40 });
+        if (!o.res && t >= 0.17) { o.res = true; res(); }
+      });
+    });
+  }
+
   const CAST_FX = {
     fire: function (a, d, sp) { return fireProjectile(a, d, sp, false); },
     fireball: function (a, d, sp) { return fireProjectile(a, d, sp, true); },
-    ice: iceVolley, bolt: lightning, wave: flameWave, meteor: meteor
+    ice: iceVolley, bolt: lightning, wave: flameWave, meteor: meteor,
+    quiz: popQuiz, detention: detention
   };
 
   function stageShake(sx, sy) {
@@ -1704,7 +1977,7 @@
   }
   function hit(def, dmg, kind, imp) {
     def.hp = Math.max(0, def.hp - dmg);
-    SFX.grunt(def === hero);
+    SFX.grunt(def === hero ? 'hero' : def.voice);
     if (kind === 'crit') SFX.crit();
     if (def.hp <= 0) SFX.ko();
     renderBar(def);
@@ -1733,6 +2006,11 @@
     hideBubble(atk);
     hit(def, r.dmg, r.kind, IMPACT[sp.id]);
     say(atk.name + '\'s ' + sp.name + ' hits ' + def.name + ' for ' + r.dmg + (r.kind === 'crit' ? ' - critical!' : '!'));
+    if (sp.status === 'detain' && def.hp > 0) {
+      def.detained = true;
+      showBadge(def, 'DETENTION', sp.bub);
+      say(def.name + ' is sent to detention and will lose the next turn!');
+    }
     await sleep(sp.settle); if (!alive()) return false;
     hideBubble(atk);
     setAnim(atk, 'idle');
@@ -1741,7 +2019,7 @@
 
   async function meleeTurn(atk, def, alive) {
     setAnim(atk, 'attack');
-    say(atk.name + ' attacks!');
+    say(atk.melee === 'ruler' ? atk.name + ' swings his ruler!' : atk.name + ' attacks!');
     SFX.swing(0.1);
     await sleep(ATT[0] + ATT[1] + 40); if (!alive()) return false;
     if (Math.random() < 0.10) {
@@ -1751,7 +2029,7 @@
       say(atk.name + ' misses! ' + def.name + ' dodges.');
     } else {
       const r = rollDamage(DMG_MIN, DMG_MAX);
-      SFX.slash();
+      if (atk.melee === 'ruler') SFX.ruler(); else SFX.slash();
       hit(def, r.dmg, r.kind, null);
       say(atk.name + ' hits ' + def.name + ' for ' + r.dmg + (r.kind === 'crit' ? ' - critical!' : '!'));
     }
@@ -1782,17 +2060,32 @@
     const t = performance.now();
     actors.forEach(function (a) {
       a.hp = MAX_HP; a.shown = MAX_HP; a.mp = MAX_MP; a.shownMp = MAX_MP;
-      a.anim = 'idle'; a.t0 = t; a.victory = false; a.shiftT = -1e9; a.tint = null; a.flashCol = null;
-      hideBubble(a);
+      a.anim = 'idle'; a.t0 = t; a.victory = false; a.shiftT = -1e9; a.tint = null; a.flashCol = null; a.detained = false;
+      hideBubble(a); hideBadge(a); a.cageObj = null;
     });
+    const mob = pickMob();
+    applyMob(mob);
     resetBarsInstant();
+    SFX.intro(mob.voice);
 
     let atk = Math.random() < 0.5 ? hero : gob;
     let def = atk === hero ? gob : hero;
-    say(atk.name + ' goes first!');
-    await sleep(1300); if (!alive()) return;
+    say(mob.intro);
+    await sleep(1500); if (!alive()) return;
+    say(atk === hero && mode === 'play' ? 'You go first!' : atk.name + ' goes first!');
+    await sleep(1000); if (!alive()) return;
 
     for (;;) {
+      if (atk.detained) {
+        // detention costs a whole turn
+        atk.detained = false; atk.tint = null;
+        hideBadge(atk); cageOff(atk);
+        SFX.detentionEnd();
+        say(atk.name + ' is stuck in detention and loses the turn!');
+        await sleep(1500); if (!alive()) return;
+        const sw = atk; atk = def; def = sw;
+        continue;
+      }
       let sp;
       if (atk === hero && mode === 'play') {
         sp = await askPlayer(); if (!alive()) return;
@@ -1815,7 +2108,7 @@
     banner.hidden = false;
     if (atk === hero) SFX.win(); else SFX.lose();
     say(def.name + ' is defeated. ' + atk.name + ' wins with ' + atk.hp + ' HP left!');
-    scoreEl.textContent = 'Hero ' + hero.wins + ' - ' + gob.wins + ' Goblin';
+    scoreEl.textContent = 'Won ' + hero.wins + ' / Lost ' + gob.wins;
     cmdEl.hidden = true;
     againBtn.hidden = false;
     if (mode === 'play') {
@@ -1879,9 +2172,9 @@
     const mq = matchMedia(LAND);
     if (mq.addEventListener) mq.addEventListener('change', queueLayout);
   }
-  if (window.__duelDebug) window.__duelDebug({ SFX: SFX, hero: hero, gob: gob, SPELLS: SPELLS, CAST_FX: CAST_FX, charge: charge, fxFrame: fxFrame, drawScene: drawScene, drawActor: drawActor, drawShadow: drawShadow, setAnim: setAnim, hit: hit, IMPACT: IMPACT, showBubble: showBubble, actors: actors, stop: function () { battleId++; clearInterval(countdown); }, setReady: function () { ready = true; }, getCv: function () { return cv; } });
+  if (window.__duelDebug) window.__duelDebug({ MOBS: MOBS, applyMob: applyMob, force: function (k) { forcedMob = k; }, cageOff: cageOff, showBadge: showBadge, SFX: SFX, hero: hero, gob: gob, SPELLS: SPELLS, CAST_FX: CAST_FX, charge: charge, fxFrame: fxFrame, drawScene: drawScene, drawActor: drawActor, drawShadow: drawShadow, setAnim: setAnim, hit: hit, IMPACT: IMPACT, showBubble: showBubble, actors: actors, stop: function () { battleId++; clearInterval(countdown); }, setReady: function () { ready = true; }, getCv: function () { return cv; } });
   requestAnimationFrame(tick);
-  Promise.all([loaded(heroImg), loaded(gobImg)]).then(function () {
+  Promise.all([loaded(heroImg), loaded(gobImg), loaded(teachImg).catch(function () { return null; })]).then(function () {
     ready = true;
     battle();
   }).catch(function () { say('The sprite sheets failed to load.'); });
