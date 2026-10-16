@@ -3,7 +3,7 @@
 // so new uploads show up on the next launch with no version number to bump. The copies it saves along the way
 // let the game keep working offline.
 const CACHE = 'forest-duel';
-const FILES = ['./', './index.html', './hero.png', './goblin.png', './teacher.png', './press-start-2p.woff2', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './manifest.webmanifest'];
+const FILES = ['./', './index.html', './hero.png', './goblin.png', './teacher.png', './frost.png', './warlord.png', './head.png', './press-start-2p.woff2', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
