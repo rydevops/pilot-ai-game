@@ -380,6 +380,12 @@
   }
   .hint[hidden] { display: none; }
   @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.25; } }
+  #ver {
+    position: absolute; left: max(10px, env(safe-area-inset-left, 0px)); bottom: max(8px, env(safe-area-inset-bottom, 0px)); z-index: 2;
+    font: 400 8px/1 var(--pix); letter-spacing: 0.04em; color: #fff; background: none; border: 0; padding: 8px 4px; cursor: pointer;
+    text-shadow: 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 2px 0 var(--ink), 0 -2px 0 var(--ink), 2px 2px 0 var(--ink), -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink);
+  }
+  #ver:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
   .tflash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
   .go .tflash { animation: tflash 0.9s steps(9) both; }
   @keyframes tflash { 0% { opacity: 1; } 100% { opacity: 0; } }
@@ -472,6 +478,7 @@
     <button id="tMus" type="button" aria-label="Music on or off">MUSIC</button>
   </div>
   <p class="hint" id="hint" hidden>TAP FOR SOUND</p>
+  <button id="ver" type="button" aria-label="Version 1.8, built 15 Oct 21:32. Tap to fetch the newest files."><span id="verT">v1.8 &middot; 15 Oct 21:32</span></button>
 </section>
 <div id="wipe" aria-hidden="true"></div>
 
@@ -2943,6 +2950,14 @@
     setTimeout(enterBattle, reduce ? 450 : 950);
   }
   $('start').addEventListener('click', startGame);
+  // tapping the version clears the saved copies of the game and reloads it, to be sure the newest files are showing
+  $('ver').addEventListener('click', function () {
+    $('verT').textContent = 'UPDATING...';
+    const jobs = [];
+    try { if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); })); } catch (e) {}
+    try { if (window.caches && caches.keys) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); })); } catch (e) {}
+    Promise.all(jobs).catch(function () {}).then(function () { location.reload(); });
+  });
   document.addEventListener('keydown', function (e) {
     if (IN.active && IN.ready && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startGame(); }
   });
