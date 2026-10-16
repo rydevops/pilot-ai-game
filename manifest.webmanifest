@@ -1,0 +1,14 @@
+{
+  "name": "Forest Duel",
+  "short_name": "Forest Duel",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1f4a35",
+  "theme_color": "#1f4a35",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
