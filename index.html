@@ -173,7 +173,49 @@
     text-shadow: 3px 0 0 var(--ink), -3px 0 0 var(--ink), 0 3px 0 var(--ink), 0 -3px 0 var(--ink), 3px 3px 0 var(--ink), -3px -3px 0 var(--ink), 3px -3px 0 var(--ink), -3px 3px 0 var(--ink);
   }
 
-  .foot { display: grid; gap: 14px; }
+  .foot { display: grid; gap: 10px; }
+  .slot { height: 54px; display: grid; }
+  .cmd { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .cmd[hidden], #again[hidden] { display: none; }
+  .cbtn {
+    font: 400 8px/1 var(--pix);
+    color: var(--ink);
+    background: var(--c, #fff);
+    border: 3px solid var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+    padding: 0 2px;
+    min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+    cursor: pointer;
+    transition: opacity 0.15s, filter 0.15s;
+  }
+  .cbtn b { font: 400 9px/1 var(--pix); letter-spacing: 0.02em; }
+  .cbtn small { font: 400 8px/1 var(--pix); opacity: 0.75; }
+  .cbtn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .cbtn:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; }
+  .cbtn:disabled { background: #5d5775; color: #2f2745; cursor: default; box-shadow: none; transform: translate(3px, 3px); }
+  .cbtn:disabled small { opacity: 0.7; }
+  .cmd.ready .cbtn:not(:disabled) { animation: nudge 0.9s steps(2) infinite; }
+  .cmd.ready .cbtn:not(:disabled):nth-child(2) { animation-delay: 0.1s; }
+  .cmd.ready .cbtn:not(:disabled):nth-child(3) { animation-delay: 0.2s; }
+  .cmd.ready .cbtn:not(:disabled):nth-child(4) { animation-delay: 0.3s; }
+  @keyframes nudge { 0% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+  @media (prefers-reduced-motion: reduce) { .cmd.ready .cbtn:not(:disabled) { animation: none; } }
+  .btns { display: flex; gap: 8px; }
+  #mode, #snd {
+    font: 400 8px/1 var(--pix);
+    color: var(--ink);
+    background: #ffffff;
+    border: 3px solid var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+    padding: 9px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #snd.off { background: #b9b3c9; color: #5a4f73; }
+  #mode:active, #snd:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  #mode:focus-visible, #snd:focus-visible { outline: 3px solid #ffffff; outline-offset: 3px; }
+
   .log {
     margin: 0;
     padding: 12px;
@@ -184,7 +226,7 @@
     align-items: center;
     font: 400 11px/1.6 var(--pix);
   }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 46px; padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: content-box; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 34px; padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: content-box; }
   .score {
     margin: 0;
     color: #ffffff;
@@ -198,11 +240,54 @@
     background: var(--gold);
     border: 3px solid var(--ink);
     box-shadow: 3px 3px 0 var(--ink);
-    padding: 12px 12px;
+    width: 100%;
+    height: 54px;
+    padding: 0 12px;
     cursor: pointer;
   }
   #again:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
   #again:focus-visible { outline: 3px solid #ffffff; outline-offset: 3px; }
+
+  /* Landscape phones: short and wide. Health panels sit above each fighter, the arena takes the middle, and the
+     bottom bar holds the move buttons (left) and the battle log (right). Score and switches sit between the panels. */
+  @media (orientation: landscape) and (max-height: 520px) {
+    body { padding-top: max(8px, env(safe-area-inset-top, 0px)); padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
+    #stage {
+      max-width: 720px;
+      gap: 10px;
+      grid-template-columns: minmax(0, 1fr) 140px minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) 56px;
+      grid-template-areas: "hh mid hg" "arena arena arena" "cmd cmd log";
+    }
+    .huds, .foot { display: contents; }
+    #hudHero { grid-area: hh; align-self: start; }
+    #hudGob { grid-area: hg; align-self: start; }
+    .arena { grid-area: arena; }
+    .slot { grid-area: cmd; height: 56px; }
+    .log { grid-area: log; height: 56px; padding: 6px 10px; font-size: 9px; line-height: 1.45; }
+    .row { grid-area: mid; align-self: start; flex-direction: column; align-items: stretch; justify-content: flex-start; height: auto; padding: 0; gap: 8px; }
+    .score { font-size: 8px; line-height: 1.5; text-align: center; }
+    .btns { gap: 6px; }
+    #mode, #snd { flex: 1; min-width: 0; padding: 8px 2px; }
+    #snd #sndV { display: none; }
+    #snd.off .lb { text-decoration: line-through; }
+    #mode .lb { display: none; }
+    #again, .cbtn { height: 56px; }
+
+    .hud { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 8px; row-gap: 5px; align-items: center; padding: 7px 10px 8px; }
+    .hud h2 { grid-column: 1 / 3; grid-row: 1; margin: 0; font-size: 10px; min-height: 17px; display: flex; align-items: center; }
+    .hud#hudHero .chips { display: none; }
+    .hud .chips { grid-column: 2 / 4; grid-row: 1; justify-content: flex-end; margin: 0; gap: 4px; }
+    .hud .bar { grid-column: 2; grid-row: 2; margin: 0; height: 11px; }
+    .hud .bar.mpbar { grid-row: 3; height: 8px; margin: 0; }
+    .hud .hp, .hud .hp.mp { display: contents; }
+    .hud .hp > span:first-child { grid-column: 1; grid-row: 2; font-size: 9px; }
+    .hud .hp > span:last-child { grid-column: 3; grid-row: 2; justify-self: end; font-size: 9px; }
+    .hud .hp.mp > span:first-child, .hud .hp.mp > span:last-child { grid-row: 3; }
+  }
+  @media (orientation: landscape) and (max-height: 520px) and (max-width: 740px) {
+    .hud .chips { display: none; }
+  }
 </style>
 
 <canvas id="bg" aria-hidden="true"></canvas>
@@ -234,9 +319,16 @@
 
   <footer class="foot" id="foot">
     <p class="log" id="log" role="status" aria-live="polite">Loading sprites</p>
-    <div class="row">
-      <p class="score" id="score">Wins: Hero 0 / Fire Goblin 0</p>
+    <div class="slot">
+      <div class="cmd" id="cmd" role="group" aria-label="Your moves"></div>
       <button id="again" type="button" hidden>Fight again</button>
+    </div>
+    <div class="row" id="ctl">
+      <p class="score" id="score">Hero 0 - 0 Goblin</p>
+      <div class="btns">
+        <button id="snd" type="button" aria-label="Sound effects on or off"><span class="lb">SFX</span><span id="sndV">: ON</span></button>
+        <button id="mode" type="button" aria-label="Switch between playing yourself and watching an auto battle"><span class="lb">MODE: </span><span id="modeV">YOU</span></button>
+      </div>
     </div>
   </footer>
 </main>
@@ -251,8 +343,10 @@
   const $ = id => document.getElementById(id);
   const cv = $('cv'), ctx = cv.getContext('2d');
   const arena = $('arena'), stage = $('stage'), banner = $('banner');
-  const logEl = $('log'), scoreEl = $('score'), againBtn = $('again');
+  const logEl = $('log'), scoreEl = $('score'), againBtn = $('again'), cmdEl = $('cmd'), modeBtn = $('mode');
   const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const LAND = '(orientation: landscape) and (max-height: 520px)';
+  const isLand = function () { return !!(window.matchMedia && matchMedia(LAND).matches); };
 
   // ====================================================================
   //  Spells
@@ -278,6 +372,222 @@
     ice:      { tint: 'ice',   ms: 560, flash: 'rgba(205,246,255,0.85)' },
     bolt:     { tint: 'shock', ms: 420, flash: 'rgba(255,255,225,0.9)' }
   };
+
+  // ====================================================================
+  //  Sound: every effect is synthesised with Web Audio (no audio files).
+  //  Times are seconds from the moment the matching visual starts.
+  // ====================================================================
+  const SFX = (function () {
+    let ac = null, master = null, white = null, brown = null, on = true;
+    try { on = localStorage.getItem('fd-sfx') !== 'off'; } catch (e) {}
+
+    function build(c) {
+      ac = c;
+      master = ac.createGain();
+      master.gain.value = 0.55;
+      const comp = ac.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 14; comp.ratio.value = 6; comp.attack.value = 0.003; comp.release.value = 0.2;
+      master.connect(comp); comp.connect(ac.destination);
+      const sr = ac.sampleRate, len = Math.floor(sr * 2);
+      white = ac.createBuffer(1, len, sr); brown = ac.createBuffer(1, len, sr);
+      const w = white.getChannelData(0), b = brown.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < len; i++) { const x = Math.random() * 2 - 1; w[i] = x; last = (last + 0.02 * x) / 1.02; b[i] = last * 3.5; }
+    }
+    // iOS only lets audio start from a tap, so this runs on the first touch or key press
+    function ensure() {
+      if (!on) return null;
+      if (!ac) {
+        try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        try { build(new AC()); } catch (e) { ac = null; return null; }
+      }
+      if (ac.state === 'suspended' && ac.resume && !ac.startRendering) { try { ac.resume(); } catch (e) {} }
+      return ac;
+    }
+
+    function env(g, t, v, a, d, swell) {
+      g.gain.setValueAtTime(0.0001, t);
+      if (swell) {
+        g.gain.exponentialRampToValueAtTime(v, t + d * 0.92);
+      } else {
+        g.gain.linearRampToValueAtTime(v, t + Math.min(a, d * 0.5));
+      }
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    }
+    // oscillator: f is a number or [from, to] (exponential glide)
+    function T(o) {
+      const c = ensure(); if (!c) return;
+      const t = c.currentTime + (o.at || 0), d = o.d;
+      const f0 = Array.isArray(o.f) ? o.f[0] : o.f, f1 = Array.isArray(o.f) ? o.f[1] : o.f;
+      const osc = c.createOscillator(), g = c.createGain();
+      osc.type = o.type || 'sine';
+      osc.frequency.setValueAtTime(f0, t);
+      if (f1 !== f0) osc.frequency.exponentialRampToValueAtTime(f1, t + d);
+      env(g, t, o.v, o.a || 0.005, d, o.swell);
+      osc.connect(g); g.connect(master);
+      osc.start(t); osc.stop(t + d + 0.05);
+    }
+    // filtered noise: f is a number or [from, to] filter sweep
+    function N(o) {
+      const c = ensure(); if (!c) return;
+      const t = c.currentTime + (o.at || 0), d = o.d;
+      const f0 = Array.isArray(o.f) ? o.f[0] : o.f, f1 = Array.isArray(o.f) ? o.f[1] : o.f;
+      const src = c.createBufferSource(), flt = c.createBiquadFilter(), g = c.createGain();
+      src.buffer = o.brown ? brown : white; src.loop = true;
+      flt.type = o.type || 'bandpass'; flt.Q.value = o.q || 0.8;
+      flt.frequency.setValueAtTime(f0, t);
+      if (f1 !== f0) flt.frequency.exponentialRampToValueAtTime(f1, t + d);
+      env(g, t, o.v, o.a || 0.005, d, o.swell);
+      src.connect(flt); flt.connect(g); g.connect(master);
+      src.start(t, Math.random() * 1.4); src.stop(t + d + 0.05);
+    }
+    const rr = function (a, b) { return a + Math.random() * (b - a); };
+    // a scatter of tiny crackles
+    function pops(at, span, n, lo, hi, v) {
+      for (let i = 0; i < n; i++) { const f = rr(lo, hi); N({ at: at + Math.random() * span, d: 0.03, f: f, q: 4, v: v * rr(0.5, 1) }); }
+    }
+    function boom(at, s) {
+      T({ at: at, f: [150, 36], d: 0.55 * s, v: 0.9, type: 'sine', a: 0.004 });
+      N({ at: at, d: 0.7 * s, f: [2600, 140], type: 'lowpass', v: 0.85, a: 0.004 });
+      N({ at: at, d: 0.9 * s, f: [500, 70], type: 'lowpass', v: 0.7, brown: true, a: 0.01 });
+      pops(at + 0.05, 0.6 * s, Math.round(9 * s), 1500, 4500, 0.28);
+    }
+    function whoosh(at, d, lo, hi, v) { N({ at: at, d: d, f: [lo, hi], q: 1.1, v: v, a: d * 0.35 }); }
+
+    const API = {
+      attach: function (c) { build(c); },
+      unlock: function () { ensure(); },
+      isOn: function () { return on; },
+      setOn: function (v) {
+        on = !!v;
+        try { localStorage.setItem('fd-sfx', on ? 'on' : 'off'); } catch (e) {}
+        if (on) { ensure(); API.click(); }
+      },
+      suspend: function (hide) {
+        if (!ac || ac.startRendering) return;
+        try { if (hide) ac.suspend(); else if (on) ac.resume(); } catch (e) {}
+      },
+
+      // ---- interface ----
+      click: function () { T({ f: [880, 1180], d: 0.07, v: 0.4, type: 'square' }); },
+      ping: function () { T({ f: 784, d: 0.14, v: 0.28, type: 'triangle' }); T({ at: 0.09, f: 1175, d: 0.24, v: 0.28, type: 'triangle' }); },
+
+      // ---- sword ----
+      swing: function (at) { whoosh(at || 0, 0.22, 450, 3400, 1.3); N({ at: (at || 0) + 0.04, d: 0.12, f: [5000, 9000], type: 'highpass', v: 0.3 }); },
+      slash: function () {
+        N({ d: 0.09, f: [3500, 7000], type: 'highpass', v: 1.0 });
+        T({ f: [180, 55], d: 0.22, v: 1.4, type: 'sine' });
+        N({ d: 0.16, f: [2200, 260], type: 'lowpass', v: 1.1 });
+        T({ f: [2400, 1800], d: 0.08, v: 0.25, type: 'square' });          // metallic ring
+      },
+      miss: function () { whoosh(0, 0.2, 700, 1800, 0.7); T({ at: 0.05, f: [500, 800], d: 0.1, v: 0.2, type: 'sine' }); },
+      crit: function () {
+        T({ f: 1319, d: 0.45, v: 0.22, type: 'triangle' });
+        T({ at: 0.06, f: 1760, d: 0.5, v: 0.2, type: 'triangle' });
+        T({ at: 0.12, f: 2349, d: 0.6, v: 0.16, type: 'triangle' });
+        N({ d: 0.12, f: [6000, 9000], type: 'highpass', v: 0.25 });
+      },
+      grunt: function (hero) {
+        if (hero) T({ at: 0.03, f: [360, 170], d: 0.14, v: 0.7, type: 'square' });
+        else T({ at: 0.03, f: [190, 70], d: 0.2, v: 0.85, type: 'sawtooth' });
+      },
+      ko: function () {
+        T({ at: 0.15, f: [420, 55], d: 0.8, v: 0.3, type: 'square', a: 0.01 });
+        T({ at: 0.15, f: [210, 40], d: 0.9, v: 0.4, type: 'sawtooth', a: 0.01 });
+        N({ at: 0.3, d: 0.35, f: [1200, 150], type: 'lowpass', v: 0.4 });
+      },
+      win: function () {
+        [523, 659, 784, 1047].forEach(function (f, i) { T({ at: i * 0.12, f: f, d: 0.16, v: 0.2, type: 'square' }); T({ at: i * 0.12, f: f / 2, d: 0.16, v: 0.16, type: 'triangle' }); });
+        T({ at: 0.5, f: 1047, d: 0.7, v: 0.2, type: 'square', a: 0.01 }); T({ at: 0.5, f: 784, d: 0.7, v: 0.14, type: 'square', a: 0.01 }); T({ at: 0.5, f: 523, d: 0.7, v: 0.16, type: 'triangle' });
+      },
+      lose: function () {
+        [392, 370, 349, 262].forEach(function (f, i) { T({ at: i * 0.2, f: f, d: 0.3, v: 0.2, type: 'triangle' }); T({ at: i * 0.2, f: f / 2, d: 0.3, v: 0.16, type: 'sawtooth' }); });
+      },
+
+      // ---- the wind-up while a caster raises their weapon (about 0.55s) ----
+      charge: function (id) {
+        if (id === 'ice') {
+          [1568, 1976, 2349, 2637, 3136, 3951].forEach(function (f, i) { T({ at: i * 0.085, f: f, d: 0.4, v: 0.16, type: 'sine' }); T({ at: i * 0.085, f: f * 2.01, d: 0.25, v: 0.05, type: 'sine' }); });
+          N({ d: 0.56, f: [5000, 9000], type: 'highpass', v: 0.14, swell: true });
+          T({ f: [400, 900], d: 0.56, v: 0.08, type: 'triangle', swell: true });
+        } else if (id === 'bolt') {
+          T({ f: [55, 120], d: 0.56, v: 0.3, type: 'sawtooth', swell: true });
+          T({ f: [110, 330], d: 0.56, v: 0.09, type: 'square', swell: true });
+          N({ d: 0.56, f: [1500, 5000], type: 'highpass', v: 0.16, swell: true });
+          for (let i = 0; i < 16; i++) { const at = 0.56 * Math.pow(Math.random(), 0.6); N({ at: at, d: 0.02, f: rr(2500, 6000), q: 5, v: 0.12 + 0.2 * at }); }
+        } else if (id === 'meteor' || id === 'wave') {
+          T({ f: [42, 95], d: 0.56, v: 0.5, type: 'sine', swell: true });
+          T({ f: [90, 200], d: 0.56, v: 0.14, type: 'sawtooth', swell: true });
+          N({ d: 0.56, f: [120, 900], type: 'lowpass', v: 0.5, brown: true, swell: true });
+          pops(0, 0.5, 8, 2000, 5000, 0.2);
+        } else {
+          T({ f: [180, 520], d: 0.56, v: 0.15, type: 'sawtooth', swell: true });
+          N({ d: 0.56, f: [150, 1100], type: 'lowpass', v: 0.45, brown: true, swell: true });
+          pops(0, 0.5, 8, 2500, 5500, 0.2);
+        }
+      },
+
+      // ---- the spell itself, timed to its animation ----
+      release: function (id) {
+        if (id === 'fire' || id === 'fireball') {
+          const lo = id === 'fireball' ? 0.8 : 1;
+          whoosh(0, 0.3, 350 * lo, 2200 * lo, 0.55);
+          T({ f: [520 * lo, 180 * lo], d: 0.32, v: 0.14, type: 'sawtooth' });
+          N({ at: 0.05, d: 0.45, f: [2200, 1300], q: 2, v: 0.16, a: 0.1 });
+          pops(0.05, 0.4, 7, 2500, 6000, 0.2);
+          boom(0.5, 1);
+        } else if (id === 'ice') {
+          [0, 0.11, 0.22].forEach(function (a, i) {
+            N({ at: a, d: 0.12, f: [3500, 8000], type: 'highpass', v: 0.3 });
+            T({ at: a, f: [2400, 3800], d: 0.13, v: 0.14, type: 'sine' });
+            const hit = a + 0.3;
+            T({ at: hit, f: 2600 + i * 300, d: 0.2, v: 0.24, type: 'triangle' });
+            T({ at: hit, f: 3900 + i * 400, d: 0.14, v: 0.12, type: 'sine' });
+            N({ at: hit, d: 0.06, f: 7000, type: 'highpass', v: 0.2 });
+          });
+          // the freeze creeping over the target
+          N({ at: 0.52, d: 0.6, f: [4000, 8000], type: 'highpass', v: 0.22, a: 0.05 });
+          T({ at: 0.52, f: [1300, 600], d: 0.55, v: 0.1, type: 'triangle' });
+          pops(0.52, 0.55, 12, 4000, 9000, 0.22);
+          // and the shatter
+          N({ at: 1.14, d: 0.55, f: [10000, 3000], type: 'highpass', v: 0.6, a: 0.003 });
+          T({ at: 1.14, f: [220, 70], d: 0.25, v: 0.35, type: 'sine' });
+          for (let i = 0; i < 12; i++) T({ at: 1.14 + i * 0.03, f: rr(1800, 5400), d: 0.22, v: 0.14, type: 'sine' });
+        } else if (id === 'bolt') {
+          // the sky builds, then the strike lands at 0.42s
+          T({ f: [90, 420], d: 0.42, v: 0.3, type: 'sawtooth', swell: true });
+          N({ d: 0.42, f: [1800, 7000], type: 'highpass', v: 0.2, swell: true });
+          T({ f: [200, 1800], d: 0.42, v: 0.1, type: 'sine', swell: true });
+          const s = 0.42;
+          N({ at: s, d: 0.07, f: [9000, 600], type: 'bandpass', q: 0.4, v: 1.0, a: 0.001 });
+          T({ at: s, f: [2400, 50], d: 0.3, v: 0.55, type: 'sawtooth', a: 0.001 });
+          N({ at: s + 0.03, d: 1.4, f: [450, 60], type: 'lowpass', v: 0.95, brown: true, a: 0.08 });
+          pops(s, 0.5, 18, 2500, 7000, 0.3);
+          T({ at: s, f: [120, 60], d: 0.25, v: 0.9, type: 'sine' });
+        } else if (id === 'wave') {
+          N({ d: 0.8, f: [300, 1000], q: 0.9, v: 0.55, a: 0.25 });
+          N({ d: 0.8, f: [200, 600], type: 'lowpass', v: 0.5, brown: true, a: 0.25 });
+          for (let i = 0; i < 10; i++) { const at = i * 0.055; N({ at: at, d: 0.1, f: [900, 2400], q: 1.5, v: 0.22 }); pops(at, 0.05, 2, 2500, 6000, 0.16); }
+          boom(0.55, 1.15);
+        } else if (id === 'meteor') {
+          T({ f: [60, 220], d: 0.45, v: 0.4, type: 'sine', swell: true });
+          T({ f: [120, 440], d: 0.45, v: 0.1, type: 'triangle', swell: true });
+          N({ d: 0.45, f: [100, 600], type: 'lowpass', v: 0.4, brown: true, swell: true });
+          // incoming whistle, then impact at about 1.05s
+          T({ at: 0.45, f: [2600, 280], d: 0.6, v: 0.2, type: 'sine', a: 0.05 });
+          N({ at: 0.45, d: 0.6, f: [3500, 500], q: 1.4, v: 0.3, a: 0.1 });
+          boom(1.05, 2);
+          N({ at: 1.05, d: 1.5, f: [600, 55], type: 'lowpass', v: 0.7, brown: true, a: 0.02 });
+          pops(1.1, 1.0, 16, 800, 3500, 0.25);
+        }
+      }
+    };
+    return API;
+  })();
+  ['pointerdown', 'touchend', 'keydown'].forEach(function (ev) { document.addEventListener(ev, SFX.unlock, { passive: true }); });
+  document.addEventListener('visibilitychange', function () { SFX.suspend(document.hidden); });
 
   // ====================================================================
   //  Fighters
@@ -320,6 +630,52 @@
       a.hud.chips.appendChild(el);
       return { el: el, cost: sp.cost, id: sp.id };
     });
+  });
+
+  // ---------- player controls ----------
+  // 'play': the hero waits for a tap on the command bar. 'auto': the hero picks at random like the goblin.
+  let mode = 'play', pending = null;
+  const BTN = [{ id: 'attack', label: 'ATTACK', sub: 'FREE', rgb: [255, 255, 255], key: 'a' }].concat(hero.spells.map(function (sp) {
+    return { id: sp.id, label: { fire: 'FIRE', ice: 'ICE', bolt: 'BOLT' }[sp.id] || sp.name.toUpperCase(), sub: sp.cost + ' MP', rgb: sp.rgb, sp: sp, key: sp.chip.toLowerCase() };
+  }));
+  function choose(b) {
+    if (!pending) return;
+    if (b.sp && hero.mp < b.sp.cost) return;
+    SFX.click();
+    pending(b.sp || null);
+  }
+  BTN.forEach(function (b) {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'cbtn';
+    el.style.setProperty('--c', 'rgb(' + b.rgb.join(',') + ')');
+    el.innerHTML = '<b>' + b.label + '</b><small>' + b.sub + '</small>';
+    el.setAttribute('aria-label', b.sp ? b.sp.name + ' spell, costs ' + b.sp.cost + ' MP' : 'Sword attack, free');
+    el.disabled = true;
+    el.addEventListener('click', function () { choose(b); });
+    cmdEl.appendChild(el);
+    b.el = el;
+  });
+  function setCmd(on) {
+    BTN.forEach(function (b) { b.el.disabled = !on || !!(b.sp && hero.mp < b.sp.cost); });
+    cmdEl.classList.toggle('ready', !!on);
+  }
+  document.addEventListener('keydown', function (e) {
+    const k = (e.key || '').toLowerCase();
+    BTN.forEach(function (b, i) { if (k === b.key || k === String(i + 1)) choose(b); });
+  });
+  const sndBtn = $('snd');
+  function showSnd() {
+    $('sndV').textContent = SFX.isOn() ? ': ON' : ': OFF';
+    sndBtn.classList.toggle('off', !SFX.isOn());
+  }
+  showSnd();
+  sndBtn.addEventListener('click', function () { SFX.setOn(!SFX.isOn()); showSnd(); });
+  modeBtn.addEventListener('click', function () {
+    SFX.click();
+    mode = mode === 'play' ? 'auto' : 'play';
+    $('modeV').textContent = mode === 'play' ? 'YOU' : 'AUTO';
+    if (mode === 'auto' && pending) pending(chooseSpell(hero));
   });
 
   const ATT = [170, 120, 90, 200];        // wind-up, overhead, slash, follow-through (ms)
@@ -1288,7 +1644,15 @@
     dpr = window.devicePixelRatio || 1;
     const aw = stage.clientWidth;
     let s = Math.floor(aw / 58);
-    s = Math.max(3, Math.min(s, Math.floor((window.innerHeight * 0.36) / CELL)));
+    if (isLand()) {
+      // wide and short: whatever height is left between the health panels and the bottom bar
+      const availL = stage.clientHeight - Math.max($('hudHero').offsetHeight, $('ctl').offsetHeight) - 56 - 20;
+      s = availL > 0 ? Math.max(3, Math.min(Math.floor(availL / CELL), 9)) : 4;
+    } else {
+      s = Math.max(3, Math.min(s, Math.floor((window.innerHeight * 0.36) / CELL)));
+      const avail = stage.clientHeight - $('huds').offsetHeight - $('foot').offsetHeight - 32;   // keep the arena from squeezing small phones
+      if (avail > 0) s = Math.max(3, Math.min(s, Math.floor(avail / CELL)));
+    }
     if (s >= 4 && s % 2 === 1) s -= 1;            // keeps the forest pixel exactly half a fighter pixel
     dev = Math.max(1, Math.round(s * dpr));
     cv.width = Math.round(aw * dpr);
@@ -1340,6 +1704,9 @@
   }
   function hit(def, dmg, kind, imp) {
     def.hp = Math.max(0, def.hp - dmg);
+    SFX.grunt(def === hero);
+    if (kind === 'crit') SFX.crit();
+    if (def.hp <= 0) SFX.ko();
     renderBar(def);
     popup(def, '-' + dmg, kind);
     def.flashCol = imp ? imp.flash : null;
@@ -1358,7 +1725,9 @@
     showBubble(atk, sp);
     say(atk.name + ' casts ' + sp.name + '!');
     charge(atk, sp);
+    SFX.charge(sp.id);
     await sleep(560); if (!alive()) return false;
+    SFX.release(sp.id);
     await CAST_FX[sp.id](atk, def, sp); if (!alive()) return false;
     const r = rollDamage(sp.min, sp.max);
     hideBubble(atk);
@@ -1370,11 +1739,44 @@
     return true;
   }
 
+  async function meleeTurn(atk, def, alive) {
+    setAnim(atk, 'attack');
+    say(atk.name + ' attacks!');
+    SFX.swing(0.1);
+    await sleep(ATT[0] + ATT[1] + 40); if (!alive()) return false;
+    if (Math.random() < 0.10) {
+      def.shiftT = performance.now();
+      SFX.miss();
+      popup(def, 'MISS', 'miss');
+      say(atk.name + ' misses! ' + def.name + ' dodges.');
+    } else {
+      const r = rollDamage(DMG_MIN, DMG_MAX);
+      SFX.slash();
+      hit(def, r.dmg, r.kind, null);
+      say(atk.name + ' hits ' + def.name + ' for ' + r.dmg + (r.kind === 'crit' ? ' - critical!' : '!'));
+    }
+    await sleep(ATT[2] - 40 + ATT[3]); if (!alive()) return false;
+    setAnim(atk, 'idle');
+    return true;
+  }
+
+  // waits for a tap on the command bar; resolves with a spell, or null for a sword attack
+  function askPlayer() {
+    return new Promise(function (res) {
+      say(hero.mp >= SPELLS.hero[0].cost ? 'Your turn! Strike with your sword or cast a spell.' : 'Your turn! Low on MP - strike with your sword.');
+      pending = function (c) { pending = null; setCmd(false); res(c); };
+      setCmd(true);
+      SFX.ping();
+    });
+  }
+
   async function battle() {
     const id = ++battleId;
     const alive = function () { return id === battleId; };
     clearInterval(countdown);
     againBtn.hidden = true;
+    cmdEl.hidden = false;
+    pending = null; setCmd(false);
     banner.hidden = true;
     fxClear();
     const t = performance.now();
@@ -1391,24 +1793,16 @@
     await sleep(1300); if (!alive()) return;
 
     for (;;) {
-      const sp = chooseSpell(atk);
+      let sp;
+      if (atk === hero && mode === 'play') {
+        sp = await askPlayer(); if (!alive()) return;
+      } else {
+        sp = chooseSpell(atk);
+      }
       if (sp) {
         if (!(await castTurn(atk, def, sp, alive))) return;
-      } else {
-        setAnim(atk, 'attack');
-        say(atk.name + ' attacks!');
-        await sleep(ATT[0] + ATT[1] + 40); if (!alive()) return;
-        if (Math.random() < 0.10) {
-          def.shiftT = performance.now();
-          popup(def, 'MISS', 'miss');
-          say(atk.name + ' misses! ' + def.name + ' dodges.');
-        } else {
-          const r = rollDamage(DMG_MIN, DMG_MAX);
-          hit(def, r.dmg, r.kind, null);
-          say(atk.name + ' hits ' + def.name + ' for ' + r.dmg + (r.kind === 'crit' ? ' - critical!' : '!'));
-        }
-        await sleep(ATT[2] - 40 + ATT[3]); if (!alive()) return;
-        setAnim(atk, 'idle');
+      } else if (!(await meleeTurn(atk, def, alive))) {
+        return;
       }
       if (def.hp <= 0) break;
       await sleep(750); if (!alive()) return;
@@ -1417,19 +1811,25 @@
 
     await sleep(900); if (!alive()) return;
     atk.victory = true; atk.t0 = performance.now(); atk.wins++;
-    banner.textContent = atk.name.toUpperCase() + ' WINS!';
+    banner.textContent = mode === 'play' ? (atk === hero ? 'YOU WIN!' : 'YOU LOSE!') : atk.name.toUpperCase() + ' WINS!';
     banner.hidden = false;
+    if (atk === hero) SFX.win(); else SFX.lose();
     say(def.name + ' is defeated. ' + atk.name + ' wins with ' + atk.hp + ' HP left!');
-    scoreEl.textContent = 'Wins: Hero ' + hero.wins + ' / Fire Goblin ' + gob.wins;
+    scoreEl.textContent = 'Hero ' + hero.wins + ' - ' + gob.wins + ' Goblin';
+    cmdEl.hidden = true;
     againBtn.hidden = false;
-    let n = 8;
-    againBtn.textContent = 'Fight again (' + n + ')';
-    countdown = setInterval(function () {
-      n--;
-      if (n <= 0) { clearInterval(countdown); battle(); } else { againBtn.textContent = 'Fight again (' + n + ')'; }
-    }, 1000);
+    if (mode === 'play') {
+      againBtn.textContent = 'Fight again';
+    } else {
+      let n = 8;
+      againBtn.textContent = 'Fight again (' + n + ')';
+      countdown = setInterval(function () {
+        n--;
+        if (n <= 0) { clearInterval(countdown); battle(); } else { againBtn.textContent = 'Fight again (' + n + ')'; }
+      }, 1000);
+    }
   }
-  againBtn.addEventListener('click', function () { battle(); });
+  againBtn.addEventListener('click', function () { SFX.click(); battle(); });
 
   // ====================================================================
   //  Main loop
@@ -1473,9 +1873,13 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(queueLayout);
   if (window.ResizeObserver) {
     const ro = new ResizeObserver(queueLayout);
-    ro.observe($('huds')); ro.observe($('foot'));
+    ro.observe($('huds')); ro.observe($('foot')); ro.observe($('hudHero')); ro.observe($('ctl'));
   }
-  if (window.__duelDebug) window.__duelDebug({ hero: hero, gob: gob, SPELLS: SPELLS, CAST_FX: CAST_FX, charge: charge, fxFrame: fxFrame, drawScene: drawScene, drawActor: drawActor, drawShadow: drawShadow, setAnim: setAnim, hit: hit, IMPACT: IMPACT, showBubble: showBubble, actors: actors, stop: function () { battleId++; clearInterval(countdown); }, setReady: function () { ready = true; }, getCv: function () { return cv; } });
+  if (window.matchMedia) {
+    const mq = matchMedia(LAND);
+    if (mq.addEventListener) mq.addEventListener('change', queueLayout);
+  }
+  if (window.__duelDebug) window.__duelDebug({ SFX: SFX, hero: hero, gob: gob, SPELLS: SPELLS, CAST_FX: CAST_FX, charge: charge, fxFrame: fxFrame, drawScene: drawScene, drawActor: drawActor, drawShadow: drawShadow, setAnim: setAnim, hit: hit, IMPACT: IMPACT, showBubble: showBubble, actors: actors, stop: function () { battleId++; clearInterval(countdown); }, setReady: function () { ready = true; }, getCv: function () { return cv; } });
   requestAnimationFrame(tick);
   Promise.all([loaded(heroImg), loaded(gobImg)]).then(function () {
     ready = true;
